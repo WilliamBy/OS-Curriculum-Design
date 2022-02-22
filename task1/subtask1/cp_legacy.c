@@ -1,6 +1,6 @@
+// 单进程誊抄 cp_legacy.c
 #include <unistd.h>
 #include <fcntl.h>
-//cp_legacy.c
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
