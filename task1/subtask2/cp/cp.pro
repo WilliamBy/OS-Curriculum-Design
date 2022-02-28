@@ -26,13 +26,29 @@ CONFIG += c++11
 
 SOURCES += \
         dialog.cpp \
-    main.cpp
+    main.cpp \
+    mainwindow.cpp \
+    confirmdialog.cpp \
+    getthread.cpp \
+    copythread.cpp \
+    putthread.cpp \
+    progressor.cpp
 
 HEADERS += \
-        dialog.h
+        dialog.h \
+    mainwindow.h \
+    confirmdialog.h \
+    getthread.h \
+    copythread.h \
+    putthread.h \
+    progressor.h \
+    pv.h
 
 FORMS += \
-        dialog.ui
+        dialog.ui \
+    mainwindow.ui \
+    confirmdialog.ui \
+    progressor.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

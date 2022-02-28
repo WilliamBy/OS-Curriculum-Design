@@ -14,6 +14,10 @@ class Dialog : public QDialog
 public:
     explicit Dialog(QWidget *parent = nullptr);
     ~Dialog();
+    void setText(const char *text);
+
+public slots:
+
 
 private:
     Ui::Dialog *ui;

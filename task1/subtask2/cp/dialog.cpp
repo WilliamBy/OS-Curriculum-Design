@@ -6,9 +6,16 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog)
 {
     ui->setupUi(this);
+    QObject::connect(ui->button, &QPushButton::clicked, this, &Dialog::close);
 }
 
 Dialog::~Dialog()
 {
     delete ui;
+    QString a;
+}
+
+void Dialog::setText(const char *text)
+{
+    ui->msg->setText(text);
 }
