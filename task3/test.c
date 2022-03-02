@@ -21,7 +21,7 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        printf("%d bytes writen\n");
+        printf("%d bytes writen\n", wbytes);
     }
     ssize_t rbytes = 0;
     char buf[256];
@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        printf("%d bytes read: %s\n", buf);
+        printf("%d bytes read: %s\n", rbytes, buf);
     }
     return 0;
 }

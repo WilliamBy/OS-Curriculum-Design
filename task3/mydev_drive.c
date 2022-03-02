@@ -1,22 +1,24 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/init>
 #include <linux/string.h>
 #include <linux/fs.h>
 #include <linux/version.h>
 #include <linux/types.h>
-#include <linux/mm.h>
 #include <linux/errno.h>
-#include <asm/segment.h>
-
-#define MYBUFFSIZE 256
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/cdev.h>
+#include <linux/slab.h>
+#include <linux/uaccess.h>
+#include <asm/uaccess.h>
+#include <asm/io.h>
+#define MYBUFFSIZE 32
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("w1_liamby <weiliang_bai@foxmail.com>");
-MODULE_DESCRIPTION("A custom character driver module");
 
-static char mybuff[MYBUFFSIZE];
-static int mydev_major = 0;
+char mybuff[MYBUFFSIZE];
+unsigned int mydev_major = 0;
 
 static int mydev_open(struct inode *inodep, struct file *filep)
 {
@@ -33,8 +35,9 @@ static int mydev_release(struct inode *inodep, struct file *filep)
 static ssize_t mydev_read(struct file *filep, char __user *usrbuff, size_t count, loff_t *offset)
 {
     printk(KERN_INFO "mydev read\n");
+    if (verify_area(0, usrbuff, count) == -EFAULT) return -EFAULT;
 
-    int ret = 0;
+    int ret;
     size_t avail = MYBUFFSIZE - *offset;
 
     if (count <= avail)
@@ -58,9 +61,10 @@ static ssize_t mydev_read(struct file *filep, char __user *usrbuff, size_t count
 
 static ssize_t mydev_write(struct file *filep, const char __user *usrbuff, size_t count, loff_t *offset)
 {
-    printk(KERN_INFO "ZXCPYP Driver: start write\n");
+    printk(KERN_INFO "mydev : start write\n");
+    if (verify_area(1, usrbuff, count) == -EFAULT) return -EFAULT;   
 
-    int ret = 0;
+    int ret;
     size_t avail = MYBUFFSIZE - *offset;
 
     if (count > avail)
@@ -83,7 +87,6 @@ static ssize_t mydev_write(struct file *filep, const char __user *usrbuff, size_
 }
 
 static const struct file_operations myfops = {
-    .owner = THIS_MODULE,
     .open = mydev_open,
     .release = mydev_release,
     .read = mydev_read,
@@ -95,10 +98,9 @@ static int mydev_init(void)
     printk(KERN_INFO "mydev init\n");
 
     int result;
-    result = register_chrdev(0, "mydevice", &myfops);
+    result = register_chrdev(0, "mydev", &myfops);
     if (result < 0)
     {
-        printk(KERN_INFO "mydevice: can't get major number\n");
         return result;
     }
     if (mydev_major == 0)
@@ -108,9 +110,7 @@ static int mydev_init(void)
 
 static void mydev_exit(void)
 {
-    printk(KERN_INFO "mydev exit\n");
-
-    unregister_chrdev(mydev_major);
+    unregister_chrdev(mydev_major, "mydev");
 }
 
 module_init(mydev_init);
