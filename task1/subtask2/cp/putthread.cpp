@@ -43,7 +43,10 @@ void PutThread::run()
         }
     } while (wbytes != 0);
     fprintf(stderr, "put should ok\n");
+    emit rate(100);
     emit complete();
+    close(shm_handle->from);
+    close(shm_handle->to);
     exit(0);
 }
 

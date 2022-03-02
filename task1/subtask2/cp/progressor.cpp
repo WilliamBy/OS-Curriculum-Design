@@ -22,3 +22,8 @@ void Progressor::setProgress(int rate)
 {
     ui->bar->setValue(rate);
 }
+
+int Progressor::getProgress()
+{
+    return ui->bar->value();
+}

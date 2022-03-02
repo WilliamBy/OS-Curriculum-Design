@@ -17,6 +17,7 @@ public:
     ~Progressor();
     void setTitle(QString);
     void setProgress(int);
+    int getProgress();
 
 private:
     Ui::Progressor *ui;

@@ -30,12 +30,13 @@ void GetThread::run()
             fprintf(stderr, "err: %s\n", strerror(errno));
             emit err();
             exit(1);
-        } else if (rbytes != 0 && shm_handle->amountBytes != 0) {
+        } else if (rbytes > 0 && shm_handle->amountBytes != 0) {
             rbytesAll += rbytes;
             emit rate((100 * rbytesAll) / shm_handle->amountBytes);
         }
     } while (rbytes != 0);
     fprintf(stderr, "get should ok\n");
+    emit rate(100);
     exit(0);
 }
 

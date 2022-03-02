@@ -14,7 +14,7 @@
 #include <sys/fcntl.h>
 #include <errno.h>
 
-#define BUFSIZE 256 //共享缓冲区大小
+#define BUFSIZE 32 //共享缓冲区大小
 
 namespace SysIO {
 int close(int fd);

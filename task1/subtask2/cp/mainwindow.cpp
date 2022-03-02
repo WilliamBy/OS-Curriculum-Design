@@ -19,6 +19,15 @@ MainWindow::MainWindow(QWidget *parent) :
     copyProg->setTitle("COPY PROGRESS");
     putProg->setTitle("PUT PROGRESS");
     ui->setupUi(this);
+    getProg->move(0, 0);
+    copyProg->move(0 + 200, 0 + 100);
+    putProg->move(0 + 400, 0 + 200);
+    /* 创建共享内存 */
+    if ((shmid = shmget(IPC_PRIVATE, sizeof(shm_struct), IPC_CREAT | 0666)) < 0)
+    {
+        fprintf(stderr, "shmget failed: %s\n", strerror(shmid));
+    }
+    shm_handle = (shm_struct *)shmat(shmid, NULL, SHM_R | SHM_W);
     QObject::connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::recConfirm);
     QObject::connect(cDialog, &ConfirmDialog::accept, [this]
     {
@@ -34,6 +43,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    /* 删除信号灯集和共享内存 */
+    union semun arg;
+    if (semctl(shm_handle->semid, 0, IPC_RMID, arg) == -1)
+    {
+        fprintf(stderr, "can't delete sems!\n");
+    }
+    if (shmctl(shmid, IPC_RMID, 0) < 0)
+    {
+        fprintf(stderr, "can't delete shms!\n");
+    }
     delete ui;
 }
 
@@ -73,14 +92,6 @@ void V(int semid, int index)
 
 int MainWindow::cp(const char *src, const char *des)
 {
-    /* 创建共享内存 */
-    if ((shmid = shmget(IPC_PRIVATE, sizeof(shm_struct), IPC_CREAT | 0666)) < 0)
-    {
-        fprintf(stderr, "shmget failed: %s\n", strerror(shmid));
-        return 1;
-    }
-    shm_handle = (shm_struct *)shmat(shmid, NULL, SHM_R | SHM_W);
-
     /* 创建文件描述符 */
     if ((shm_handle->from = open(src, O_RDONLY)) == -1)
     {
@@ -156,24 +167,35 @@ int MainWindow::cp(const char *src, const char *des)
     });
     QObject::connect(getThread, &GetThread::rate, [&](int rate)
     {
-        fprintf(stderr, "refresh get: %d\n", rate);
-        getProg->setProgress(rate);
+        if (rate > getProg->getProgress())
+        {
+            fprintf(stderr, "refresh get: %d\n", rate);
+            getProg->setProgress(rate);
+        }
     });
     QObject::connect(copyThread, &CopyThread::rate, [&](int rate)
     {
-        fprintf(stderr, "refresh copy: %d\n", rate);
-        copyProg->setProgress(rate);
+        if (rate > copyProg->getProgress())
+        {
+            fprintf(stderr, "refresh copy: %d\n", rate);
+            copyProg->setProgress(rate);
+        }
     });
     QObject::connect(putThread, &PutThread::rate, [&](int rate)
     {
-        fprintf(stderr, "refresh put: %d\n", rate);
-        putProg->setProgress(rate);
+        if (rate > putProg->getProgress())
+        {
+            fprintf(stderr, "refresh put: %d\n", rate);
+            putProg->setProgress(rate);
+        }
+
     });
     QObject::connect(putThread, &PutThread::complete, this, &MainWindow::copyCompleted);
     ui->buttonBox->setEnabled(false);
     getThread->start();
     copyThread->start();
     putThread->start();
+    ui->buttonBox->setEnabled(false);
     return 0;
 }
 
@@ -184,18 +206,6 @@ int SysIO::close(int fd)
 
 void MainWindow::copyCompleted()
 {
-    SysIO::close(shm_handle->from);
-    SysIO::close(shm_handle->to);
-    /* 删除信号灯集和共享内存 */
-    union semun arg;
-    if (semctl(shm_handle->semid, 0, IPC_RMID, arg) == -1)
-    {
-        fprintf(stderr, "can't delete sems!\n");
-    }
-    if (shmctl(shmid, IPC_RMID, 0) < 0)
-    {
-        fprintf(stderr, "can't delete shms!\n");
-    }
     fprintf(stderr, "the whole copy completed!\n");
     ui->buttonBox->setEnabled(true);
     popup->setText("Copy Proccess Succeed.");
