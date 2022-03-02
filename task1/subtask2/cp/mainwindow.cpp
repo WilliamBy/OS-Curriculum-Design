@@ -18,33 +18,6 @@ MainWindow::MainWindow(QWidget *parent) :
     getProg->setTitle("GET PROGRESS");
     copyProg->setTitle("COPY PROGRESS");
     putProg->setTitle("PUT PROGRESS");
-    QObject::connect(getThread, &GetThread::err, [&](){
-        putThread->exit(1);
-        copyThread->exit(1);
-    });
-    QObject::connect(copyThread, &CopyThread::err, [&](){
-        putThread->exit(1);
-        getThread->exit(1);
-    });
-    QObject::connect(putThread, &PutThread::err, [&](){
-        getThread->exit(1);
-        copyThread->exit(1);
-    });
-    QObject::connect(getThread, &GetThread::rate, [&](int rate)
-    {
-        fprintf(stderr, "refresh get: %d\n", rate);
-        getProg->setProgress(rate);
-    });
-    QObject::connect(copyThread, &CopyThread::rate, [&](int rate)
-    {
-        fprintf(stderr, "refresh copy: %d\n", rate);
-        copyProg->setProgress(rate);
-    });
-    QObject::connect(putThread, &PutThread::rate, [&](int rate)
-    {
-        fprintf(stderr, "refresh put: %d\n", rate);
-        putProg->setProgress(rate);
-    });
     ui->setupUi(this);
     QObject::connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &MainWindow::recConfirm);
     QObject::connect(cDialog, &ConfirmDialog::accept, [this]
@@ -55,16 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
         getProg->show();
         copyProg->show();
         putProg->show();
-        int retVal = cp(srcArr.data(), desArr.data());
-        if (retVal != 0)
-        {
-            popup->setText("Copy Proccess Failed.");
-        }
-        else
-        {
-            popup->setText("Copy Proccess Succeed.");
-        }
-        popup->show();
+        cp(srcArr.data(), desArr.data());
     });
 }
 
@@ -115,7 +79,7 @@ int MainWindow::cp(const char *src, const char *des)
         fprintf(stderr, "shmget failed: %s\n", strerror(shmid));
         return 1;
     }
-    shm_struct *shm_handle = (shm_struct *)shmat(shmid, NULL, SHM_R | SHM_W);
+    shm_handle = (shm_struct *)shmat(shmid, NULL, SHM_R | SHM_W);
 
     /* 创建文件描述符 */
     if ((shm_handle->from = open(src, O_RDONLY)) == -1)
@@ -178,6 +142,34 @@ int MainWindow::cp(const char *src, const char *des)
     getThread = new GetThread(nullptr, shmid);
     copyThread = new CopyThread(nullptr, shmid);
     putThread = new PutThread(nullptr, shmid);
+    QObject::connect(getThread, &GetThread::err, [&](){
+        putThread->exit(1);
+        copyThread->exit(1);
+    });
+    QObject::connect(copyThread, &CopyThread::err, [&](){
+        putThread->exit(1);
+        getThread->exit(1);
+    });
+    QObject::connect(putThread, &PutThread::err, [&](){
+        getThread->exit(1);
+        copyThread->exit(1);
+    });
+    QObject::connect(getThread, &GetThread::rate, [&](int rate)
+    {
+        fprintf(stderr, "refresh get: %d\n", rate);
+        getProg->setProgress(rate);
+    });
+    QObject::connect(copyThread, &CopyThread::rate, [&](int rate)
+    {
+        fprintf(stderr, "refresh copy: %d\n", rate);
+        copyProg->setProgress(rate);
+    });
+    QObject::connect(putThread, &PutThread::rate, [&](int rate)
+    {
+        fprintf(stderr, "refresh put: %d\n", rate);
+        putProg->setProgress(rate);
+    });
+    QObject::connect(putThread, &PutThread::complete, this, &MainWindow::copyCompleted);
     ui->buttonBox->setEnabled(false);
     getThread->start();
     copyThread->start();
@@ -195,6 +187,7 @@ void MainWindow::copyCompleted()
     SysIO::close(shm_handle->from);
     SysIO::close(shm_handle->to);
     /* 删除信号灯集和共享内存 */
+    union semun arg;
     if (semctl(shm_handle->semid, 0, IPC_RMID, arg) == -1)
     {
         fprintf(stderr, "can't delete sems!\n");
@@ -203,4 +196,9 @@ void MainWindow::copyCompleted()
     {
         fprintf(stderr, "can't delete shms!\n");
     }
+    fprintf(stderr, "the whole copy completed!\n");
+    ui->buttonBox->setEnabled(true);
+    popup->setText("Copy Proccess Succeed.");
+    popup->show();
+    return;
 }

@@ -15,7 +15,6 @@ public:
 signals:
     void rate(int);
     void err();
-    void complete();
 
 public slots:
     void errHandle();

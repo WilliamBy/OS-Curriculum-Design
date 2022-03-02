@@ -39,10 +39,11 @@ void PutThread::run()
         else if (wbytes > 0 && shm_handle->amountBytes != 0)
         {
             wBytesAll += wbytes;
-//            emit rate((100 * wBytesAll) / shm_handle->amountBytes);
+            emit rate((100 * wBytesAll) / shm_handle->amountBytes);
         }
     } while (wbytes != 0);
     fprintf(stderr, "put should ok\n");
+    emit complete();
     exit(0);
 }
 

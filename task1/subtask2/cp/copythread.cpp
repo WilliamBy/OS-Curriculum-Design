@@ -41,7 +41,7 @@ void CopyThread::run()
         if (shm_handle != 0)
         {
             cBytesAll += shm_handle->l2;
-//            emit rate((100 * cBytesAll) / shm_handle->amountBytes);
+            emit rate((100 * cBytesAll) / shm_handle->amountBytes);
         }
     }
 }
