@@ -23,6 +23,13 @@ int main(int argc, char const *argv[])
     {
         printf("%d bytes writen\n", wbytes);
     }
+    close("/dev/mydev");
+    mydev_fd = open("/dev/mydev", O_RDWR, 0666);
+    if (mydev_fd == -1)
+    {
+        fprintf(stderr, "fail to open '/dev/mydev': %s\n", strerror(errno));
+        return 1;
+    }
     ssize_t rbytes = 0;
     char buf[256];
     if ((rbytes = read(mydev_fd, buf, 13)) < 0)

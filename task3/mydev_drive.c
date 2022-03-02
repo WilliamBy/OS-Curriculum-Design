@@ -11,10 +11,7 @@
 #include <linux/cdev.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <asm/uaccess.h>
-#include <asm/io.h>
 #define MYBUFFSIZE 32
-
 MODULE_LICENSE("GPL");
 
 char mybuff[MYBUFFSIZE];
@@ -35,7 +32,7 @@ static int mydev_release(struct inode *inodep, struct file *filep)
 static ssize_t mydev_read(struct file *filep, char __user *usrbuff, size_t count, loff_t *offset)
 {
     printk(KERN_INFO "mydev read\n");
-    if (verify_area(0, usrbuff, count) == -EFAULT) return -EFAULT;
+//    if (access_ok(0, usrbuff, count) == 0) return -EFAULT;
 
     int ret;
     size_t avail = MYBUFFSIZE - *offset;
@@ -62,7 +59,7 @@ static ssize_t mydev_read(struct file *filep, char __user *usrbuff, size_t count
 static ssize_t mydev_write(struct file *filep, const char __user *usrbuff, size_t count, loff_t *offset)
 {
     printk(KERN_INFO "mydev : start write\n");
-    if (verify_area(1, usrbuff, count) == -EFAULT) return -EFAULT;   
+  //  if (access_ok(1, usrbuff, count) == 0) return -EFAULT;   
 
     int ret;
     size_t avail = MYBUFFSIZE - *offset;
@@ -86,7 +83,7 @@ static ssize_t mydev_write(struct file *filep, const char __user *usrbuff, size_
     return ret;
 }
 
-static const struct file_operations myfops = {
+const struct file_operations myfops = {
     .open = mydev_open,
     .release = mydev_release,
     .read = mydev_read,
@@ -101,6 +98,7 @@ static int mydev_init(void)
     result = register_chrdev(0, "mydev", &myfops);
     if (result < 0)
     {
+	printk(KERN_INFO "mydev init failed!\n");
         return result;
     }
     if (mydev_major == 0)
@@ -110,6 +108,7 @@ static int mydev_init(void)
 
 static void mydev_exit(void)
 {
+    printk(KERN_INFO "mydev exit\n");
     unregister_chrdev(mydev_major, "mydev");
 }
 
