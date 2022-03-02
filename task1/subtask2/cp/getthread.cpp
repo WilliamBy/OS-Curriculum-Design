@@ -32,7 +32,7 @@ void GetThread::run()
             exit(1);
         } else if (rbytes != 0 && shm_handle->amountBytes != 0) {
             rbytesAll += rbytes;
-//            emit rate((100 * rbytesAll) / shm_handle->amountBytes);
+            emit rate((100 * rbytesAll) / shm_handle->amountBytes);
         }
     } while (rbytes != 0);
     fprintf(stderr, "get should ok\n");

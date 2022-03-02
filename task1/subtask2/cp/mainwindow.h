@@ -11,6 +11,7 @@
 #include "getthread.h"
 #include "putthread.h"
 #include "copythread.h"
+#include "pv.h"
 
 namespace Ui {
 class MainWindow;
@@ -36,9 +37,12 @@ public:
 
 public slots:
     void recConfirm();
+    void copyCompleted();
 
 private:
     Ui::MainWindow *ui;
+    int shmid = -1;
+    shm_struct *shm_handle = nullptr;
 };
 
 #endif // MAINWINDOW_H
